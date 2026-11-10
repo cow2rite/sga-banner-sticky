@@ -222,26 +222,30 @@ def save_state(value: dict) -> None:
 
 def run() -> None:
     token = os.environ.get("DISCORD_BOT_TOKEN", "").strip()
-    source_url = os.environ.get("SOURCE_WEBHOOK_URL", "").strip()
-    if not token or not source_url:
-        raise SafeError("Missing DISCORD_BOT_TOKEN or SOURCE_WEBHOOK_URL secret")
-    source_url = webhook_url(source_url)
-    source_webhook = discord("GET", source_url)
-    if not isinstance(source_webhook, dict):
-        raise SafeError("Cannot read source webhook")
-    source_channel = str(source_webhook.get("channel_id") or "")
+    if not token:
+        raise SafeError("Missing DISCORD_BOT_TOKEN secret")
 
+    # Each source webhook can read ONLY messages it originally posted, even
+    # when both webhooks point to the very same private source channel.
     configs = [
-        ("oneday", "ONEDAY_SOURCE_MESSAGE_ID", "ONEDAY_TARGET_WEBHOOK_URL"),
-        ("career", "CAREER_SOURCE_MESSAGE_ID", "CAREER_TARGET_WEBHOOK_URL"),
+        ("oneday", "ONEDAY_SOURCE_WEBHOOK_URL", "ONEDAY_SOURCE_MESSAGE_ID", "ONEDAY_TARGET_WEBHOOK_URL"),
+        ("career", "CAREER_SOURCE_WEBHOOK_URL", "CAREER_SOURCE_MESSAGE_ID", "CAREER_TARGET_WEBHOOK_URL"),
     ]
     state = load_state()
     target_channels = set()
-    for key, source_id_var, target_var in configs:
+    for key, source_url_var, source_id_var, target_var in configs:
+        source_raw = os.environ.get(source_url_var, "").strip()
         source_id = os.environ.get(source_id_var, "").strip()
         target_url = os.environ.get(target_var, "").strip()
-        if not re.fullmatch(r"\d{16,22}", source_id) or not target_url:
-            raise SafeError(f"Missing or invalid secret: {source_id_var} / {target_var}")
+        if not source_raw or not re.fullmatch(r"\d{16,22}", source_id) or not target_url:
+            raise SafeError(f"Missing or invalid secret: {source_url_var} / {source_id_var} / {target_var}")
+        source_url = webhook_url(source_raw)
+        source_webhook = discord("GET", source_url)
+        if not isinstance(source_webhook, dict):
+            raise SafeError(f"{key}: source webhook inaccessible")
+        source_channel = str(source_webhook.get("channel_id") or "")
+        if not source_channel:
+            raise SafeError(f"{key}: source webhook has no channel ID")
         target_url = webhook_url(target_url)
 
         target_webhook = discord("GET", target_url)
