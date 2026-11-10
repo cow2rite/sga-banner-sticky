@@ -25,7 +25,8 @@ jobs:
       - name: Repost separate channel banners if necessary
         env:
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
-          SOURCE_WEBHOOK_URL: ${{ secrets.SOURCE_WEBHOOK_URL }}
+          ONEDAY_SOURCE_WEBHOOK_URL: ${{ secrets.ONEDAY_SOURCE_WEBHOOK_URL }}
+          CAREER_SOURCE_WEBHOOK_URL: ${{ secrets.CAREER_SOURCE_WEBHOOK_URL }}
           ONEDAY_SOURCE_MESSAGE_ID: ${{ secrets.ONEDAY_SOURCE_MESSAGE_ID }}
           CAREER_SOURCE_MESSAGE_ID: ${{ secrets.CAREER_SOURCE_MESSAGE_ID }}
           ONEDAY_TARGET_WEBHOOK_URL: ${{ secrets.ONEDAY_TARGET_WEBHOOK_URL }}
