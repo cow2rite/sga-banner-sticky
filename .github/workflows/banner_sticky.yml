@@ -1,0 +1,44 @@
+name: SGA banner sticky
+
+on:
+  schedule:
+    - cron: '3/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sga-banner-sticky
+  cancel-in-progress: false
+
+jobs:
+  repost-banners:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Repost separate channel banners if necessary
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          SOURCE_WEBHOOK_URL: ${{ secrets.SOURCE_WEBHOOK_URL }}
+          ONEDAY_SOURCE_MESSAGE_ID: ${{ secrets.ONEDAY_SOURCE_MESSAGE_ID }}
+          CAREER_SOURCE_MESSAGE_ID: ${{ secrets.CAREER_SOURCE_MESSAGE_ID }}
+          ONEDAY_TARGET_WEBHOOK_URL: ${{ secrets.ONEDAY_TARGET_WEBHOOK_URL }}
+          CAREER_TARGET_WEBHOOK_URL: ${{ secrets.CAREER_TARGET_WEBHOOK_URL }}
+        run: python3 sticky_banners.py
+
+      - name: Save independent sticky state
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add state.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Track latest SGA banner IDs [skip ci]"
+            git push
+          fi
