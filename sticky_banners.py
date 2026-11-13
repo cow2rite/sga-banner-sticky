@@ -262,6 +262,21 @@ def run() -> None:
         if str(original.get("channel_id")) != source_channel:
             raise SafeError(f"{key}: original not in the source channel")
         payload = source_payload(original)
+
+        # GitHub에 저장된 배너 이미지 사용
+        if key == "oneday":
+            banner_image = "https://raw.githubusercontent.com/cow2rite/sga-banner-sticky/main/oneday.png"
+        else:
+            banner_image = "https://raw.githubusercontent.com/cow2rite/sga-banner-sticky/main/career.png"
+
+        # 기존 이미지 주소를 고정 주소로 교체
+        for component in traverse(payload["components"]):
+            if component.get("type") == 12:
+                for image in component.get("items", []):
+                    image["media"]["url"] = banner_image
+            elif component.get("type") == 11:
+                component["media"]["url"] = banner_image
+
         digest = jsonhash(payload)
 
         channel = discord("GET", f"{API}/channels/{channel_id}", token=token)
